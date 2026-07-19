@@ -358,7 +358,21 @@ export default function AuctionDetailPage() {
   const lotClaimed = fieldResults?.[11]?.result as boolean | undefined;
   const proceedsClaimed = fieldResults?.[12]?.result as boolean | undefined;
 
-  const myBid = myBidRaw as Bid | undefined;
+  // bids(address) has 4 separate ABI outputs (not a single named tuple/struct
+  // type), so viem decodes the result as a positional array
+  // [bidder, commitmentHash, deposit, refundClaimed], not an object with
+  // those keys - build the object explicitly instead of casting.
+  const myBidTuple = myBidRaw as
+    | readonly [Address, Hex, bigint, boolean]
+    | undefined;
+  const myBid: Bid | undefined = myBidTuple
+    ? {
+        bidder: myBidTuple[0],
+        commitmentHash: myBidTuple[1],
+        deposit: myBidTuple[2],
+        refundClaimed: myBidTuple[3],
+      }
+    : undefined;
   const hasBid = Boolean(myBid && myBid.bidder !== zeroAddress);
 
   const sameAddress = (a?: Address, b?: Address) =>
