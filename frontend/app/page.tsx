@@ -1,65 +1,271 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { formatUnits, type Abi, type Address } from "viem";
+import { useReadContract, useReadContracts } from "wagmi";
+import { Countdown } from "@/components/Countdown";
+import {
+  AUCTION_FACTORY_ADDRESS,
+  FXRP_DECIMALS,
+  auctionFactoryAbi,
+  sealedBidAuctionAbi,
+} from "@/lib/contracts";
+import { coston2 } from "@/lib/wagmi";
+
+const factoryAbi = auctionFactoryAbi as Abi;
+const auctionAbi = sealedBidAuctionAbi as Abi;
+
+// Fields batch-read per auction. bidDeposit, biddingDeadline and finalPrice are
+// 18-decimal native C2FLR values; only lotAmount uses FXRP_DECIMALS (6).
+const AUCTION_FIELDS = [
+  "seller",
+  "lotAmount",
+  "biddingDeadline",
+  "bidDeposit",
+  "state",
+  "finalPrice",
+  "bidderCount",
+] as const;
+
+const AUCTION_STATE = { FUNDING: 0, OPEN: 1, SETTLED: 2 } as const;
+
+const STATE_META = [
+  {
+    label: "Funding",
+    className:
+      "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
+  },
+  {
+    label: "Open",
+    className:
+      "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300",
+  },
+  {
+    label: "Settled",
+    className: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+  },
+  {
+    label: "No Winner",
+    className: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  },
+  {
+    label: "Expired",
+    className: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400",
+  },
+] as const;
+
+function truncateAddress(address: string) {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`;
+}
+
+function formatAmount(value: bigint, decimals: number) {
+  const s = formatUnits(value, decimals);
+  const [int, frac] = s.split(".");
+  const grouped = Number(int).toLocaleString("en-US");
+  if (!frac) return grouped;
+  const trimmed = frac.replace(/0+$/, "");
+  return trimmed ? `${grouped}.${trimmed}` : grouped;
+}
+
+type Auction = {
+  address: Address;
+  seller?: Address;
+  lotAmount?: bigint;
+  biddingDeadline?: bigint;
+  bidDeposit?: bigint;
+  state?: number;
+  finalPrice?: bigint;
+  bidderCount?: bigint;
+};
+
+function AuctionCard({ auction }: { auction: Auction }) {
+  const stateMeta =
+    auction.state !== undefined && auction.state < STATE_META.length
+      ? STATE_META[auction.state]
+      : undefined;
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <Link
+      href={`/auctions/${auction.address}`}
+      className="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+          {truncateAddress(auction.address)}
+        </span>
+        {stateMeta && (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${stateMeta.className}`}
+          >
+            {stateMeta.label}
+          </span>
+        )}
+      </div>
+
+      <p className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        {auction.lotAmount !== undefined
+          ? `${formatAmount(auction.lotAmount, FXRP_DECIMALS)} FXRP`
+          : "—"}
+      </p>
+
+      <div>
+        <p className="text-sm text-zinc-900 dark:text-zinc-100">
+          <span className="text-zinc-500 dark:text-zinc-400">
+            Bid collateral:{" "}
+          </span>
+          {auction.bidDeposit !== undefined
+            ? `${formatAmount(auction.bidDeposit, 18)} C2FLR`
+            : "—"}
+        </p>
+        <p
+          className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400"
+          title="Every bidder posts the same deposit, so the on-chain amount never reveals the real bid size."
+        >
+          uniform deposit - hides real bid size
+        </p>
+      </div>
+
+      {auction.state === AUCTION_STATE.OPEN &&
+        auction.biddingDeadline !== undefined && (
+          <p className="text-sm text-green-700 dark:text-green-300">
+            <Countdown deadline={Number(auction.biddingDeadline)} />
+          </p>
+        )}
+
+      {auction.state === AUCTION_STATE.SETTLED &&
+        auction.finalPrice !== undefined && (
+          <div>
+            <p className="text-sm text-zinc-900 dark:text-zinc-100">
+              <span className="text-zinc-500 dark:text-zinc-400">
+                Winning price:{" "}
+              </span>
+              {formatAmount(auction.finalPrice, 18)} C2FLR
+            </p>
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+              Only the winning price is public.
+            </p>
+          </div>
+        )}
+
+      <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+        <span>
+          Seller{" "}
+          <span className="font-mono">
+            {auction.seller ? truncateAddress(auction.seller) : "—"}
+          </span>
+        </span>
+        <span>
+          {auction.bidderCount !== undefined
+            ? `${auction.bidderCount.toString()} bidder${auction.bidderCount === BigInt(1) ? "" : "s"}`
+            : "—"}
+        </span>
+      </div>
+    </Link>
+  );
+}
+
+function LoadingGrid() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="h-48 animate-pulse rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+      ))}
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-zinc-300 px-6 py-16 text-center dark:border-zinc-700">
+      <p className="text-lg font-medium text-zinc-900 dark:text-zinc-50">
+        No auctions yet
+      </p>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        Be the first to sell an FXRP lot in a sealed-bid auction.
+      </p>
+      <Link
+        href="/create"
+        className="inline-flex h-9 items-center justify-center rounded-full bg-zinc-900 px-4 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
+      >
+        Create Auction
+      </Link>
+    </div>
+  );
+}
+
+export default function AuctionsPage() {
+  const { data: auctionAddresses, isLoading: isLoadingAddresses } =
+    useReadContract({
+      address: AUCTION_FACTORY_ADDRESS,
+      abi: factoryAbi,
+      functionName: "getAllAuctions",
+      chainId: coston2.id,
+    });
+
+  const addresses = (auctionAddresses as Address[] | undefined) ?? [];
+
+  const { data: fieldResults, isLoading: isLoadingFields } = useReadContracts({
+    contracts: addresses.flatMap((address) =>
+      AUCTION_FIELDS.map((functionName) => ({
+        address,
+        abi: auctionAbi,
+        functionName,
+        chainId: coston2.id,
+      })),
+    ),
+    query: { enabled: addresses.length > 0 },
+  });
+
+  const isLoading =
+    isLoadingAddresses || (addresses.length > 0 && isLoadingFields);
+
+  const auctions: Auction[] = addresses.map((address, i) => {
+    const base = i * AUCTION_FIELDS.length;
+    return {
+      address,
+      seller: fieldResults?.[base]?.result as Address | undefined,
+      lotAmount: fieldResults?.[base + 1]?.result as bigint | undefined,
+      biddingDeadline: fieldResults?.[base + 2]?.result as bigint | undefined,
+      bidDeposit: fieldResults?.[base + 3]?.result as bigint | undefined,
+      state: fieldResults?.[base + 4]?.result as number | undefined,
+      finalPrice: fieldResults?.[base + 5]?.result as bigint | undefined,
+      bidderCount: fieldResults?.[base + 6]?.result as bigint | undefined,
+    };
+  });
+
+  return (
+    <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+      <div className="mb-8 flex items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            Auctions
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Sealed-bid FXRP auctions on Flare Coston2.
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <Link
+          href="/create"
+          className="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-zinc-900 px-4 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        >
+          Create Auction
+        </Link>
+      </div>
+
+      {isLoading ? (
+        <LoadingGrid />
+      ) : auctions.length === 0 ? (
+        <EmptyState />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {auctions.map((auction) => (
+            <AuctionCard key={auction.address} auction={auction} />
+          ))}
         </div>
-      </main>
-    </div>
+      )}
+    </main>
   );
 }

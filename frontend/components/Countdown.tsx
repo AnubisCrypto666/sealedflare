@@ -1,0 +1,39 @@
+"use client";
+
+import { useEffect, useState, useSyncExternalStore } from "react";
+
+function formatRemaining(seconds: number): string {
+  if (seconds <= 0) return "Bidding closed";
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  const parts: string[] = [];
+  if (d > 0) parts.push(`${d}d`);
+  if (d > 0 || h > 0) parts.push(`${h}h`);
+  parts.push(`${m}m`, `${s}s`);
+  return `${parts.join(" ")} left`;
+}
+
+export function Countdown({ deadline }: { deadline: number }) {
+  // Avoid hydration mismatch: the server always renders the placeholder,
+  // while the client starts ticking after mount.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (!mounted) {
+    return <span className="tabular-nums">&mdash;</span>;
+  }
+
+  return <span className="tabular-nums">{formatRemaining(deadline - now)}</span>;
+}

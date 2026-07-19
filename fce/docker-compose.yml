@@ -1,0 +1,15 @@
+services:
+  fce:
+    build: .
+    ports:
+      - "8787:8787"
+    environment:
+      FCE_MODE: ${FCE_MODE:-SIMULATION}
+      FCE_PERSIST_KEY: ${FCE_PERSIST_KEY:-true}
+      FCE_KEY_PATH: /data/tee-identity.json
+      PORT: 8787
+    volumes:
+      - fce-data:/data
+
+volumes:
+  fce-data:
