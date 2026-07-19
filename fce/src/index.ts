@@ -27,6 +27,21 @@ async function main() {
   const app = express();
   app.use(express.json({ limit: "2mb" }));
 
+  // The browser (frontend/lib/bidEncryption.ts callers) fetches /identity and
+  // posts to /action directly from a different origin (e.g. localhost:3001
+  // vs this server's localhost:8787) - without CORS headers the browser
+  // blocks the response entirely and every call fails as "Failed to fetch".
+  // This module holds no secrets reachable via these two read-only/stateless
+  // endpoints, so a permissive origin is fine for local/demo use.
+  app.use((_req, res, next) => {
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type");
+    next();
+  });
+  // Express 5 (path-to-regexp v8) requires a named wildcard, not bare "*".
+  app.options("/*splat", (_req, res) => res.sendStatus(204));
+
   app.get("/health", (_req, res) => {
     res.json({ ok: true });
   });

@@ -52,8 +52,15 @@ export function ConnectWallet() {
   }
 
   if (!isConnected) {
-    const metaMaskConnector = connectors.find((c) => c.id === "metaMaskSDK");
-    const connector = metaMaskConnector ?? connectors[0];
+    // Prefer the generic injected connector so it picks up whatever wallet
+    // extension is actually installed (Rabby, Coinbase Wallet, Brave Wallet,
+    // MetaMask, ...) via window.ethereum, rather than assuming MetaMask
+    // specifically - the metaMaskSDK connector only works with the real
+    // MetaMask extension/app and silently does nothing for other wallets.
+    const connector =
+      connectors.find((c) => c.id === "injected") ??
+      connectors.find((c) => c.id === "metaMaskSDK") ??
+      connectors[0];
 
     return (
       <button

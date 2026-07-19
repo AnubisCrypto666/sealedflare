@@ -802,7 +802,11 @@ export default function CreateAuctionPage() {
                 type="button"
                 disabled={isConnecting}
                 onClick={() => {
+                  // Prefer the generic injected connector so it works with
+                  // whatever wallet is actually installed (Rabby, Coinbase
+                  // Wallet, MetaMask, ...), not just MetaMask specifically.
                   const connector =
+                    connectors.find((c) => c.id === "injected") ??
                     connectors.find((c) => c.id === "metaMaskSDK") ??
                     connectors[0];
                   if (connector) connect({ connector });
