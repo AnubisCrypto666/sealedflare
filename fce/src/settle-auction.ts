@@ -29,6 +29,27 @@ const bidCommittedEvent = parseAbiItem(
 );
 const minPriceCommittedEvent = parseAbiItem("event MinPriceCommitted(address indexed auction, bytes encryptedMinPriceBlob)");
 
+// Flare's public Coston2 RPC caps eth_getLogs to a 30-block range per call
+// (unlike a local anvil node, which has no such limit) - fetch in chunks.
+// Typed loosely (any) deliberately: this is a small operator script, not a
+// library, and fighting viem's generic Log<> inference through a wrapper
+// isn't worth it - callers know the concrete shape they asked for.
+const MAX_BLOCK_RANGE = 29n; // toBlock - fromBlock must be < 30 on Flare's public RPC
+
+async function getLogsChunked(
+  client: ReturnType<typeof createPublicClient>,
+  params: { address: Address; event: ReturnType<typeof parseAbiItem>; args?: Record<string, unknown>; fromBlock: bigint; toBlock: bigint },
+): Promise<any[]> {
+  const { fromBlock, toBlock, ...rest } = params;
+  const allLogs: any[] = [];
+  for (let start = fromBlock; start <= toBlock; start += MAX_BLOCK_RANGE + 1n) {
+    const end = start + MAX_BLOCK_RANGE < toBlock ? start + MAX_BLOCK_RANGE : toBlock;
+    const chunk = await client.getLogs({ ...rest, fromBlock: start, toBlock: end } as never);
+    allLogs.push(...chunk);
+  }
+  return allLogs;
+}
+
 async function main() {
   const auctionAddress = process.argv[2] as Address | undefined;
   if (!auctionAddress) {
@@ -67,22 +88,32 @@ async function main() {
     throw new Error(`Bidding still open until ${new Date(Number(biddingDeadline) * 1000).toISOString()}`);
   }
 
-  console.log("Fetching BidCommitted logs...");
-  const bidLogs = await publicClient.getLogs({
+  // FROM_BLOCK lets the operator pin the search to the auction's actual
+  // creation block (from its createAuction tx receipt) for a fast, cheap
+  // search; otherwise default to a ~4-day lookback window (~1.8s blocks).
+  const defaultLookback = 200_000n;
+  const fromBlock = process.env.FROM_BLOCK
+    ? BigInt(process.env.FROM_BLOCK)
+    : latestBlock > defaultLookback
+      ? latestBlock - defaultLookback
+      : 0n;
+
+  console.log(`Fetching BidCommitted logs from block ${fromBlock}...`);
+  const bidLogs = await getLogsChunked(publicClient, {
     address: auctionAddress,
     event: bidCommittedEvent,
-    fromBlock: 0n,
+    fromBlock,
     toBlock: latestBlock,
   });
   console.log(`Found ${bidLogs.length} bid(s).`);
 
   let encryptedMinPriceBlob: Hex | undefined;
   if (!hasPublicMinPrice) {
-    const minPriceLogs = await publicClient.getLogs({
+    const minPriceLogs = await getLogsChunked(publicClient, {
       address: factory,
       event: minPriceCommittedEvent,
       args: { auction: auctionAddress },
-      fromBlock: 0n,
+      fromBlock,
       toBlock: latestBlock,
     });
     if (minPriceLogs.length > 0) {
