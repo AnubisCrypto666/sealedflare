@@ -318,7 +318,17 @@ export default function AuctionDetailPage() {
       functionName,
       chainId: coston2.id,
     })),
-    query: { enabled: validParam },
+    query: {
+      enabled: validParam,
+      // Poll while the auction is still Open (bidding may be in progress, or
+      // closed and awaiting settlement) so the page picks up settle() being
+      // called without a manual refresh. Stops once resolved to a terminal
+      // state - `state` is field index 7, see AUCTION_FIELDS above.
+      refetchInterval: (query) => {
+        const state = query.state.data?.[7]?.result as number | undefined;
+        return state === AUCTION_STATE.OPEN ? 15_000 : false;
+      },
+    },
   });
 
   const { data: myBidRaw, refetch: refetchMyBid } = useReadContract({
@@ -348,6 +358,7 @@ export default function AuctionDetailPage() {
   const seller = fieldResults?.[0]?.result as Address | undefined;
   const lotAmount = fieldResults?.[1]?.result as bigint | undefined;
   const biddingDeadline = fieldResults?.[2]?.result as bigint | undefined;
+  const settlementDeadline = fieldResults?.[3]?.result as bigint | undefined;
   const bidDeposit = fieldResults?.[4]?.result as bigint | undefined;
   const hasPublicMinPrice = fieldResults?.[5]?.result as boolean | undefined;
   const publicMinPrice = fieldResults?.[6]?.result as bigint | undefined;
@@ -721,11 +732,25 @@ export default function AuctionDetailPage() {
             {!mounted || status === "reconnecting" ? (
               <div className="h-24 animate-pulse rounded-xl bg-zinc-100 dark:bg-zinc-800" />
             ) : biddingClosed ? (
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                Bidding has closed. Settlement is pending - this happens
-                off-chain via the FCE module and a relayer script, not from
-                this page.
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  Bidding has closed. Settlement is pending - this happens
+                  off-chain via the FCE module and a relayer script, not from
+                  this page. This page checks for an update automatically
+                  every 15 seconds.
+                </p>
+                {settlementDeadline !== undefined && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300">
+                    Settlement window:{" "}
+                    <Countdown
+                      deadline={Number(settlementDeadline)}
+                      expiredLabel="closed"
+                    />{" "}
+                    - once this closes without a result, anyone can reclaim
+                    this auction as expired instead.
+                  </p>
+                )}
+              </div>
             ) : !isConnected ? (
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 Connect your wallet (top right) to place a sealed bid.
@@ -764,6 +789,16 @@ export default function AuctionDetailPage() {
                 }}
                 className="flex flex-col gap-4"
               >
+                {!hasPublicMinPrice && (
+                  <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-900/60 dark:bg-amber-950/40">
+                    <p className="text-sm text-amber-800 dark:text-amber-300">
+                      This auction&apos;s reserve price is not shown on-chain. If
+                      the seller set one and your bid falls below it, you will
+                      not win - you will only get a full refund of your
+                      deposit, not the FXRP lot.
+                    </p>
+                  </div>
+                )}
                 <div className="flex flex-col gap-1.5">
                   <label
                     htmlFor="bidPrice"

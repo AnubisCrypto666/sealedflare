@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-function formatRemaining(seconds: number): string {
-  if (seconds <= 0) return "Bidding closed";
+function formatRemaining(seconds: number, expiredLabel: string): string {
+  if (seconds <= 0) return expiredLabel;
   const d = Math.floor(seconds / 86400);
   const h = Math.floor((seconds % 86400) / 3600);
   const m = Math.floor((seconds % 3600) / 60);
@@ -15,7 +15,13 @@ function formatRemaining(seconds: number): string {
   return `${parts.join(" ")} left`;
 }
 
-export function Countdown({ deadline }: { deadline: number }) {
+export function Countdown({
+  deadline,
+  expiredLabel = "Bidding closed",
+}: {
+  deadline: number;
+  expiredLabel?: string;
+}) {
   // Avoid hydration mismatch: the server always renders the placeholder,
   // while the client starts ticking after mount.
   const mounted = useSyncExternalStore(
@@ -35,5 +41,9 @@ export function Countdown({ deadline }: { deadline: number }) {
     return <span className="tabular-nums">&mdash;</span>;
   }
 
-  return <span className="tabular-nums">{formatRemaining(deadline - now)}</span>;
+  return (
+    <span className="tabular-nums">
+      {formatRemaining(deadline - now, expiredLabel)}
+    </span>
+  );
 }

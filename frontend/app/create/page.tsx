@@ -335,6 +335,16 @@ export default function CreateAuctionPage() {
       "The reserve price is higher than the bid deposit. Since the deposit caps the maximum possible winning price, no bid can ever reach this reserve.",
     );
   if (
+    reserveMode !== "none" &&
+    reserveWei !== null &&
+    reserveWei > BigInt(0) &&
+    bidDepositWei !== null &&
+    reserveWei === bidDepositWei
+  )
+    warnings.push(
+      "The reserve price equals the bid deposit - only a bid of exactly that amount could ever win. Consider leaving some margin between them.",
+    );
+  if (
     lotAmountWei !== null &&
     lotAmountWei > BigInt(0) &&
     fxrpBalance !== undefined &&
