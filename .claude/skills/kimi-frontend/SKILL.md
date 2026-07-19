@@ -28,6 +28,9 @@ Code does that directly.
 - The user has authenticated once via `kimi login` (device-code flow in their own
   browser — no API key ever passed through this chat). Verify with:
   `kimi provider list` or `kimi doctor config`.
+- Confirmed working model alias is **`kimi-code/k3`** (not `k3` — check `kimi provider
+  list --json` if this ever changes; the bare `k3` alias does not exist in this OAuth
+  setup, only `kimi-code/k3`).
 
 ## How to delegate
 
@@ -39,7 +42,7 @@ Code does that directly.
 2. Invoke Kimi non-interactively from the repo root, scoped to `frontend/`:
 
    ```bash
-   kimi -p "<the brief>" --yolo --add-dir frontend -m k3
+   kimi -p "<the brief>" --yolo --add-dir frontend -m kimi-code/k3
    ```
 
    - Use `--yolo` so Kimi can edit/create files without per-action approval prompts
@@ -64,7 +67,7 @@ Code does that directly.
 ## Example invocation
 
 ```bash
-kimi -p "Build the auction creation page at frontend/app/create/page.tsx. Fields: FXRP amount (deposit), reserve price (optional, checkbox to hide), bid window duration (dropdown: 1h/6h/24h). Connect wallet via wagmi (useAccount/useConnect), submit calls a passed-in onSubmit(values) prop — do not invent contract calls. Use Tailwind, match the visual style of frontend/app/page.tsx. Mobile-responsive. Show a disabled-state submit button with validation errors inline." --yolo --add-dir frontend -m k3
+kimi -p "Build the auction creation page at frontend/app/create/page.tsx. Fields: FXRP amount (deposit), reserve price (optional, checkbox to hide), bid window duration (dropdown: 1h/6h/24h). Connect wallet via wagmi (useAccount/useConnect), submit calls a passed-in onSubmit(values) prop — do not invent contract calls. Use Tailwind, match the visual style of frontend/app/page.tsx. Mobile-responsive. Show a disabled-state submit button with validation errors inline." --yolo --add-dir frontend -m kimi-code/k3
 ```
 
 ## Notes
