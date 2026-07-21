@@ -23,6 +23,7 @@ import { Countdown } from "@/components/Countdown";
 import { FCE_URL, FXRP_DECIMALS, sealedBidAuctionAbi } from "@/lib/contracts";
 import { encryptBid } from "@/lib/bidEncryption";
 import { coston2, wagmiConfig } from "@/lib/wagmi";
+import { useXrpUsdPrice } from "@/lib/useXrpUsdPrice";
 
 const auctionAbi = sealedBidAuctionAbi as Abi;
 
@@ -298,6 +299,7 @@ export default function AuctionDetailPage() {
   );
 
   const { address, chainId, isConnected, status } = useConnection();
+  const { price: xrpUsdPrice } = useXrpUsdPrice();
 
   // Ticking clock, used to detect that the bidding deadline has passed while
   // the auction is still in the Open state (settlement pending).
@@ -806,6 +808,14 @@ export default function AuctionDetailPage() {
                   >
                     Your price (C2FLR)
                   </label>
+                  {xrpUsdPrice !== undefined && lotAmount !== undefined && (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Reference: this lot&apos;s {formatAmount(lotAmount, FXRP_DECIMALS)} FXRP
+                      {" "}≈ ${(Number(formatUnits(lotAmount, FXRP_DECIMALS)) * xrpUsdPrice).toFixed(2)}{" "}
+                      at the live Flare FTSO XRP/USD price (${xrpUsdPrice.toFixed(4)}). C2FLR has no
+                      real market value on testnet - use this only to gauge relative size.
+                    </p>
+                  )}
                   <div className="relative">
                     <input
                       id="bidPrice"

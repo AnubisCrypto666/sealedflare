@@ -18,6 +18,38 @@ export const FXRP_DECIMALS = 6;
 
 export const FCE_URL = process.env.NEXT_PUBLIC_FCE_URL ?? "http://localhost:8787";
 
+// Same address on every Flare network (Coston2, Songbird, Flare, Coston) -
+// never hardcode FtsoV2's own address, always resolve it through here.
+export const CONTRACT_REGISTRY_ADDRESS: Address = "0xaD67FE66660Fb8dFE9d6b1b4240d8650e30F6019";
+
+export const contractRegistryAbi = [
+  {
+    type: "function",
+    name: "getContractAddressByName",
+    stateMutability: "view",
+    inputs: [{ name: "_name", type: "string" }],
+    outputs: [{ name: "", type: "address" }],
+  },
+] as const;
+
+// TestFtsoV2Interface on Coston2 - all view, no fees (mainnet's FtsoV2Interface
+// has the same getFeedByIdInWei signature but some other methods are payable).
+export const ftsoV2Abi = [
+  {
+    type: "function",
+    name: "getFeedByIdInWei",
+    stateMutability: "view",
+    inputs: [{ name: "_feedId", type: "bytes21" }],
+    outputs: [
+      { name: "_value", type: "uint256" },
+      { name: "_timestamp", type: "uint64" },
+    ],
+  },
+] as const;
+
+// bytes21 feed ID: 0x01 (crypto category) + "XRP/USD" UTF-8, zero-padded to 21 bytes.
+export const XRP_USD_FEED_ID = "0x015852502f55534400000000000000000000000000" as const;
+
 // Minimal ERC20 fragment for FXRP allowance/approve/balance checks.
 export const erc20Abi = [
   {

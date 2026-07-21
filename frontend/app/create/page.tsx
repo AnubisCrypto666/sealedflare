@@ -33,6 +33,7 @@ import {
 } from "@/lib/contracts";
 import { encryptBid } from "@/lib/bidEncryption";
 import { coston2, wagmiConfig } from "@/lib/wagmi";
+import { useXrpUsdPrice } from "@/lib/useXrpUsdPrice";
 
 const factoryAbi = auctionFactoryAbi as Abi;
 
@@ -289,6 +290,8 @@ export default function CreateAuctionPage() {
     query: { enabled: Boolean(address) },
   });
 
+  const { price: xrpUsdPrice } = useXrpUsdPrice();
+
   // ---- Derived values ----
 
   const lotAmountWei = parseAmount(lotAmount, FXRP_DECIMALS);
@@ -540,10 +543,20 @@ export default function CreateAuctionPage() {
 
   // ---- Render ----
 
+  const xrpUsdHint =
+    xrpUsdPrice !== undefined
+      ? ` Reference price: 1 XRP ≈ $${xrpUsdPrice.toFixed(4)} (Flare FTSO, live).`
+      : "";
+  const lotValueHint =
+    xrpUsdPrice !== undefined && lotAmountWei !== null && lotAmountWei > BigInt(0)
+      ? ` This lot ≈ $${(Number(formatUnits(lotAmountWei, FXRP_DECIMALS)) * xrpUsdPrice).toFixed(2)}.`
+      : "";
   const balanceHint =
-    address && fxrpBalance !== undefined
+    (address && fxrpBalance !== undefined
       ? `Your balance: ${formatFxrp(fxrpBalance)} FXRP. FXRP has 6 decimals, like XRP.`
-      : "FXRP has 6 decimals, like XRP.";
+      : "FXRP has 6 decimals, like XRP.") +
+    xrpUsdHint +
+    lotValueHint;
 
   const lotAmountError =
     attempted && (lotAmountWei === null || lotAmountWei <= BigInt(0))
