@@ -72,7 +72,11 @@ runs of both the settled-with-a-winner path and the no-winner/expiry path.
 - Live demo: https://sealedflare-anubis-crypto.vercel.app (browse/create
   auctions and submit sealed bids against the live Coston2 contracts;
   settling an auction needs the FCE module, which only runs locally per the
-  repo README - see "Running it yourself")
+  repo README - see "Running it yourself"). Bid submission works from this
+  hosted link because the frontend hardcodes the FCE module's *public*
+  encryption key - safe by design (only the paired private key, which never
+  leaves the FCE module, can decrypt), see the README for the full
+  explanation.
 - Demo video: _TODO - see `DEMO_SCRIPT.md`_
 
 ## Roadmap

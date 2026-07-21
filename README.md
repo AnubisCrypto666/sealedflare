@@ -87,6 +87,15 @@ auctions, create one, and submit a sealed bid directly from there; only
 *settling* an auction needs the FCE module running locally (see below), so
 that step isn't available from the hosted link alone.
 
+That works because the frontend hardcodes the FCE module's sealed-box
+**public** encryption key (`frontend/lib/contracts.ts`). That's intentional
+and safe, not an oversight: it's a public key by design - anyone can encrypt
+to it, only the paired private key inside the FCE module can decrypt - and
+it's the exact same key already registered as the trusted TEE signer on the
+deployed `AuctionFactory` above, so nothing is exposed that wasn't already
+implied by that on-chain registration. What must never be hardcoded or
+committed is the *private* half, which never leaves the FCE module.
+
 Two ways to go deeper, depending on how much you want to touch:
 
 **Quick look — run the frontend locally.** Works against the
