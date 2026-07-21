@@ -79,6 +79,72 @@ Deployed on Coston2:
 
 - `AuctionFactory`: [`0x58158479582bc0BA6bEa5822eaAE01a8Bd6E47A1`](https://coston2-explorer.flare.network/address/0x58158479582bc0ba6bea5822eaae01a8bd6e47a1)
 
+## Running it yourself
+
+Two ways to try it, depending on how deep you want to go.
+
+**Quick look — browse the live deployment.** The frontend works against the
+already-deployed `AuctionFactory` above out of the box:
+
+```bash
+git clone https://github.com/AnubisCrypto666/sealedflare.git
+cd sealedflare/frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`, connect a Coston2 wallet (MetaMask/Rabby -
+network `https://coston2-api.flare.network/ext/C/rpc`, chain ID `114`), and
+get test funds from the [Coston2 faucet](https://faucet.flare.network/coston2)
+(C2FLR + FXRP). You'll see the real auctions created during development,
+including ones already settled end-to-end. You can create a new auction and
+submit a sealed bid this way too.
+
+**Full loop, including settlement, on your own instance.** Settling an
+auction needs a signature from a TEE signer that `AuctionFactory` trusts -
+our factory only trusts *our* deployment's signer, so to run the settlement
+step yourself (not just create/bid), deploy your own instance instead of
+depending on ours:
+
+```bash
+# 1. Deploy your own AuctionFactory (owner = your deployer key)
+cd contracts
+cp .env.example .env   # fill in PRIVATE_KEY - a fresh Coston2 test wallet, funded from the faucet
+forge install
+forge test             # 19 tests should pass
+forge script script/Deploy.s.sol:Deploy --rpc-url coston2 --broadcast
+
+# 2. Run the FCE module - it generates its own identity on first boot
+cd ../fce
+docker compose up -d --build
+curl http://localhost:8787/identity   # copy "signingAddress"
+
+# 3. Register that signer with YOUR factory (you're the owner, so this works)
+cast send <YOUR_FACTORY_ADDRESS> "registerTeeSigner(address)" <SIGNING_ADDRESS> \
+  --rpc-url https://coston2-api.flare.network/ext/C/rpc --private-key $PRIVATE_KEY
+
+# 4. Point the frontend at your factory
+cd ../frontend
+echo "NEXT_PUBLIC_AUCTION_FACTORY_ADDRESS=<YOUR_FACTORY_ADDRESS>" >> .env.local
+npm install && npm run dev
+```
+
+From there: create an auction, submit a bid from a second wallet, wait for
+the bidding window to close, then settle it yourself:
+
+```bash
+cd fce
+COSTON2_RPC_URL=https://coston2-api.flare.network/ext/C/rpc \
+SETTLER_PRIVATE_KEY=$PRIVATE_KEY \
+  npx tsx src/settle-auction.ts <YOUR_AUCTION_ADDRESS>
+```
+
+This deliberately does **not** ship a shared FCE signing key in the repo -
+that key can forge settlement results for anything it's trusted for, so
+publishing it would let anyone rewrite the outcome of the live demo auctions
+above. Deploying your own instance costs nothing (testnet) and takes a few
+minutes.
+
 ## Why SIMULATION mode
 
 The Flare team confirmed on Discord (17 July 2026) that, since public FCC
