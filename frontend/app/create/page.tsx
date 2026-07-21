@@ -25,7 +25,7 @@ import {
 } from "wagmi/actions";
 import {
   AUCTION_FACTORY_ADDRESS,
-  FCE_URL,
+  FCE_ENCRYPTION_PUBLIC_KEY,
   FXRP_DECIMALS,
   FXRP_TOKEN_ADDRESS,
   auctionFactoryAbi,
@@ -390,20 +390,8 @@ export default function CreateAuctionPage() {
         publicMinPrice = reserve;
       } else if (reserveMode === "hidden") {
         go("encrypting");
-        const res = await fetch(`${FCE_URL}/identity`);
-        if (!res.ok)
-          throw new Error(
-            `Could not reach the FCE module at ${FCE_URL} (HTTP ${res.status}). Is it running?`,
-          );
-        const identity = (await res.json()) as {
-          encryptionPublicKey?: string;
-        };
-        if (!identity.encryptionPublicKey)
-          throw new Error(
-            "The FCE module did not return an encryption public key.",
-          );
         const { encryptedBid } = await encryptBid(
-          identity.encryptionPublicKey,
+          FCE_ENCRYPTION_PUBLIC_KEY,
           AUCTION_FACTORY_ADDRESS,
           reserve,
         );

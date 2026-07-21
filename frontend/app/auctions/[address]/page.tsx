@@ -20,7 +20,11 @@ import {
 import { useConnection, useReadContract, useReadContracts } from "wagmi";
 import { waitForTransactionReceipt, writeContract } from "wagmi/actions";
 import { Countdown } from "@/components/Countdown";
-import { FCE_URL, FXRP_DECIMALS, sealedBidAuctionAbi } from "@/lib/contracts";
+import {
+  FCE_ENCRYPTION_PUBLIC_KEY,
+  FXRP_DECIMALS,
+  sealedBidAuctionAbi,
+} from "@/lib/contracts";
 import { encryptBid } from "@/lib/bidEncryption";
 import { coston2, wagmiConfig } from "@/lib/wagmi";
 import { useXrpUsdPrice } from "@/lib/useXrpUsdPrice";
@@ -432,16 +436,8 @@ export default function AuctionDetailPage() {
 
     try {
       go("encrypting");
-      const res = await fetch(`${FCE_URL}/identity`);
-      if (!res.ok)
-        throw new Error(
-          `Could not reach the FCE module at ${FCE_URL} (HTTP ${res.status}). Is it running?`,
-        );
-      const identity = (await res.json()) as { encryptionPublicKey?: string };
-      if (!identity.encryptionPublicKey)
-        throw new Error("The FCE module did not return an encryption public key.");
       const { commitmentHash, encryptedBid } = await encryptBid(
-        identity.encryptionPublicKey,
+        FCE_ENCRYPTION_PUBLIC_KEY,
         address,
         priceWei,
       );

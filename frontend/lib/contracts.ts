@@ -16,7 +16,19 @@ export const FXRP_TOKEN_ADDRESS = (process.env.NEXT_PUBLIC_FXRP_TOKEN_ADDRESS ??
 // uses this.
 export const FXRP_DECIMALS = 6;
 
-export const FCE_URL = process.env.NEXT_PUBLIC_FCE_URL ?? "http://localhost:8787";
+// The FCE module's sealed-box encryption public key - safe to hardcode: it's
+// explicitly meant to be public (anyone can encrypt to it; only the paired
+// private key inside the FCE module can decrypt), and the deployed
+// AuctionFactory above is already permanently tied to this exact identity's
+// signing address as its trusted TEE signer. Hardcoding it means bid
+// encryption works from any deployment of this frontend (e.g. Vercel)
+// without the browser needing to reach the FCE module at all - only the
+// settlement relayer (fce/src/settle-auction.ts, run server-side) talks to
+// the FCE module directly. Override via NEXT_PUBLIC_FCE_ENCRYPTION_PUBLIC_KEY
+// only if you've registered a different signer with your own factory
+// (see README "Running it yourself").
+export const FCE_ENCRYPTION_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_FCE_ENCRYPTION_PUBLIC_KEY ?? "S-UtgOJoOyzl6A5gvKqZm-Lah6tIemB1o_kjU7SRU1E";
 
 // Same address on every Flare network (Coston2, Songbird, Flare, Coston) -
 // never hardcode FtsoV2's own address, always resolve it through here.
