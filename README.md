@@ -71,7 +71,9 @@ on Coston2 (chain 114), not just in local tests:
   (see below), Dockerized, plus the settlement relayer script.
 - `frontend/` - Next.js + wagmi: create an auction, submit a sealed bid,
   browse auctions with live countdowns, claim results - with a live FTSO
-  XRP/USD reference price on the creation and bidding forms.
+  XRP/USD reference price on the creation and bidding forms. The dark UI's
+  accent palette takes a subtle cue from Flare Network's official brand kit
+  (Flare Pink).
 
 Deployed on Coston2:
 
