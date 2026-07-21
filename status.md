@@ -1,4 +1,4 @@
-# Status projektu SealedFlare — 19 lipca 2026
+# Status projektu SealedFlare — 21 lipca 2026
 
 ## Zamknięty tydzień 1 (Prompt A):
 - Flare AI Skills + MCP serwer podłączone
@@ -27,6 +27,21 @@
 - **Incydent bezpieczeństwa (naprawiony):** token GitHub był zapisany jawnym tekstem w `.git/config` (ustawiony w innej sesji). Token unieważniony przez użytkownika, URL zdalnego repo wyczyszczony, `gh auth login` wykonany, `git push` działa poprawnie
 - Wszystko wypchnięte na GitHub (`github.com/AnubisCrypto666/sealedflare`, gałąź main)
 
+## Zamknięty tydzień 3 (Prompt C):
+- Integracja FTSO XRP/USD (`frontend/lib/useXrpUsdPrice.ts`): żywa cena referencyjna na stronie tworzenia aukcji i stronie szczegółów aukcji (widoczna niezależnie od stanu aukcji, nie tylko przy aktywnym składaniu oferty), auto-odświeżanie co 5s. Zweryfikowana bezpośrednio na Coston2 przez `cast` przed wpięciem do UI.
+- Filtr historii aukcji na liście: zakładki Open / Settled / Ended / All z licznikami, filtrowanie po stronie klienta.
+- README repo: sekcja "Path to production FCC" (co i jak się zmienia przy przejściu na prawdziwe TEE — bez zmian w kontraktach) + diagram architektury (mermaid).
+- Dopracowanie UX z Kimi K3: filtr historii, audyt stanów błędów (retry przy nieudanym odczycie RPC na liście/szczegółach, jawna informacja o nieudanym odczycie salda FXRP), poprawki responsywności (~375px: header, segmented controls, przyciski claim, długie adresy/kwoty).
+- Brand design — wariant D "Ember + pulse" wdrożony na cały frontend na podstawie oficjalnego brand kitu Flare Network (Flare Pink #E62058): gradientowy wordmark "SealedFlare" w headerze, statyczna różowa kreska u góry kart aukcji (zawsze widoczna, nie tylko na hover — dobrane tak, żeby czytelnie wyszło na statycznym screenie/wideo z hackathonu), glow pod kartą na hover, pulsująca różowa kropka + różowy countdown na aktywnych (Open) aukcjach. Countdown okna rozliczenia zostaje bursztynowy (inne znaczenie: ostrzeżenie, nie status "live"). Proces wyboru: 3 warianty do przejrzenia (Signal / Ember / Live wire) na osobnej, izolowanej stronie podglądu → hybryda B+C na życzenie użytkownika → wzmocnienie kreski (1px→3px) po tym, jak pierwsza wersja okazała się za subtelna → wdrożenie na realne strony → usunięcie strony podglądu.
+- 13/13 testów edge-case dla logiki FCE (`fce/src/auction.test.ts`): brak ofert, jedna oferta, remis (rozstrzygany po najwcześniejszym committcie), oferta powyżej depozytu, oferta poniżej rezerwy (jawnej i ukrytej), uszkodzony szyfrogram, sfałszowany hash commitmentu.
+- Manualne QA (checklist z Prompt C) przeszło w całości; przy okazji znaleziono i naprawiono realny bug (`bids(address)` dekodowane jako krotka pozycyjna, nie obiekt — patrz tydzień 2).
+- Dodatkowy pełny test end-to-end na nowej aukcji: `0xa44073CC7EE2a37dA972f9299909567b3b12F0f8` — licytacja zamknięta, rozliczona przez moduł FCE (`settle-auction.ts`), stan **Settled**, zwycięzca `0x1cc5...5203`, cena wygrywająca 1 C2FLR, potwierdzone w UI (wariant D widoczny na karcie).
+
+**Aktualny stan kontraktów (Coston2, chain 114):**
+- `AuctionFactory`: `0x58158479582bc0BA6bEa5822eaAE01a8Bd6E47A1`
+- TEE signer zarejestrowany i aktywny: `0x91130d93B248182430661678df77A371f7627A92` (`isTrustedSigner` = true)
+- Repo: https://github.com/AnubisCrypto666/sealedflare (gałąź main, w pełni zsynchronizowane)
+
 ## Rozstrzygnięcia:
 - Odpowiedź zespołu Flare na Discordzie: "Right now use simulated approach against Coston2 network." — budujemy wyłącznie tryb SIMULATION, brak deploymentu na prawdziwe FCC.
 
@@ -38,4 +53,4 @@
 - Preferuję: jedna czynność ręczna na raz, dokładne kroki
 
 ## Następny krok:
-Tydzień 3 — Prompt C (integracja FTSO XRP/USD w UI, sekcja README "Path to production FCC" + diagram architektury mermaid, dalsze dopieszczenie UX z Kimi, testy scenariuszy brzegowych: remis, jedna oferta, oferta poniżej rezerwy).
+Tydzień 3 zamknięty — gotowy na Prompt D (materiały zgłoszeniowe).
