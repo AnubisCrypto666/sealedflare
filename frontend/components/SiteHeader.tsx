@@ -9,7 +9,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between gap-4 px-4">
         <Link
           href="/"
-          className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+          className="bg-linear-to-r from-[#E62058] via-[#F73C68] to-[#FD6F8C] bg-clip-text text-base font-semibold tracking-tight text-transparent"
         >
           SealedFlare
         </Link>

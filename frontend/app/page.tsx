@@ -135,82 +135,92 @@ function AuctionCard({ auction }: { auction: Auction }) {
       : undefined;
 
   return (
-    <Link
-      href={`/auctions/${auction.address}`}
-      className="group flex flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
-          {truncateAddress(auction.address)}
-        </span>
-        {stateMeta && (
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-medium ${stateMeta.className}`}
-          >
-            {stateMeta.label}
+    <div className="group relative">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -inset-1 rounded-3xl bg-[#E62058]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"
+      />
+      <Link
+        href={`/auctions/${auction.address}`}
+        className="relative flex h-full flex-col gap-4 rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-zinc-400 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-600"
+      >
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-5 top-0 h-[3px] rounded-full bg-linear-to-r from-transparent via-[#F73C68] to-transparent shadow-[0_0_12px_2px_rgba(230,32,88,0.6)]"
+        />
+        <div className="flex items-center justify-between gap-2">
+          <span className="rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+            {truncateAddress(auction.address)}
           </span>
-        )}
-      </div>
+          {stateMeta && (
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-medium ${stateMeta.className}`}
+            >
+              {stateMeta.label}
+            </span>
+          )}
+        </div>
 
-      <p className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-        {auction.lotAmount !== undefined
-          ? `${formatAmount(auction.lotAmount, FXRP_DECIMALS)} FXRP`
-          : "—"}
-      </p>
-
-      <div>
-        <p className="text-sm text-zinc-900 dark:text-zinc-100">
-          <span className="text-zinc-500 dark:text-zinc-400">
-            Bid collateral:{" "}
-          </span>
-          {auction.bidDeposit !== undefined
-            ? `${formatAmount(auction.bidDeposit, 18)} C2FLR`
+        <p className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          {auction.lotAmount !== undefined
+            ? `${formatAmount(auction.lotAmount, FXRP_DECIMALS)} FXRP`
             : "—"}
         </p>
-        <p
-          className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400"
-          title="Every bidder posts the same deposit, so the on-chain amount never reveals the real bid size."
-        >
-          uniform deposit - hides real bid size
-        </p>
-      </div>
 
-      {auction.state === AUCTION_STATE.OPEN &&
-        auction.biddingDeadline !== undefined && (
-          <p className="text-sm text-green-700 dark:text-green-300">
-            <Countdown deadline={Number(auction.biddingDeadline)} />
+        <div>
+          <p className="text-sm text-zinc-900 dark:text-zinc-100">
+            <span className="text-zinc-500 dark:text-zinc-400">
+              Bid collateral:{" "}
+            </span>
+            {auction.bidDeposit !== undefined
+              ? `${formatAmount(auction.bidDeposit, 18)} C2FLR`
+              : "—"}
           </p>
-        )}
+          <p
+            className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400"
+            title="Every bidder posts the same deposit, so the on-chain amount never reveals the real bid size."
+          >
+            uniform deposit - hides real bid size
+          </p>
+        </div>
 
-      {auction.state === AUCTION_STATE.SETTLED &&
-        auction.finalPrice !== undefined && (
-          <div>
-            <p className="text-sm text-zinc-900 dark:text-zinc-100">
-              <span className="text-zinc-500 dark:text-zinc-400">
-                Winning price:{" "}
-              </span>
-              {formatAmount(auction.finalPrice, 18)} C2FLR
+        {auction.state === AUCTION_STATE.OPEN &&
+          auction.biddingDeadline !== undefined && (
+            <p className="text-sm">
+              <Countdown deadline={Number(auction.biddingDeadline)} live />
             </p>
-            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-              Only the winning price is public.
-            </p>
-          </div>
-        )}
+          )}
 
-      <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-        <span>
-          Seller{" "}
-          <span className="font-mono">
-            {auction.seller ? truncateAddress(auction.seller) : "—"}
+        {auction.state === AUCTION_STATE.SETTLED &&
+          auction.finalPrice !== undefined && (
+            <div>
+              <p className="text-sm text-zinc-900 dark:text-zinc-100">
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  Winning price:{" "}
+                </span>
+                {formatAmount(auction.finalPrice, 18)} C2FLR
+              </p>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                Only the winning price is public.
+              </p>
+            </div>
+          )}
+
+        <div className="mt-auto flex items-center justify-between border-t border-zinc-100 pt-3 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+          <span>
+            Seller{" "}
+            <span className="font-mono">
+              {auction.seller ? truncateAddress(auction.seller) : "—"}
+            </span>
           </span>
-        </span>
-        <span>
-          {auction.bidderCount !== undefined
-            ? `${auction.bidderCount.toString()} bidder${auction.bidderCount === BigInt(1) ? "" : "s"}`
-            : "—"}
-        </span>
-      </div>
-    </Link>
+          <span>
+            {auction.bidderCount !== undefined
+              ? `${auction.bidderCount.toString()} bidder${auction.bidderCount === BigInt(1) ? "" : "s"}`
+              : "—"}
+          </span>
+        </div>
+      </Link>
+    </div>
   );
 }
 

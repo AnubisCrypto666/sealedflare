@@ -651,114 +651,124 @@ export default function AuctionDetailPage() {
         </Link>
 
         {/* ---- Header / summary ---- */}
-        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs break-all text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
-              {auctionAddress}
-            </span>
-            {stateMeta && (
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${stateMeta.className}`}
-              >
-                {stateMeta.label}
+        <div className="group relative">
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-1 rounded-3xl bg-[#E62058]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100"
+          />
+          <div className="relative rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-5 top-0 h-[3px] rounded-full bg-linear-to-r from-transparent via-[#F73C68] to-transparent shadow-[0_0_12px_2px_rgba(230,32,88,0.6)]"
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="rounded-full border border-zinc-300 px-3 py-1 font-mono text-xs break-all text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+                {auctionAddress}
               </span>
-            )}
-          </div>
-
-          <p className="mt-4 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-            {lotAmount !== undefined
-              ? `${formatAmount(lotAmount, FXRP_DECIMALS)} FXRP`
-              : "—"}
-          </p>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-            Sealed-bid lot on Flare Coston2
-            {xrpUsdPrice !== undefined && lotAmount !== undefined && (
-              <>
-                {" "}
-                · ≈ ${(Number(formatUnits(lotAmount, FXRP_DECIMALS)) * xrpUsdPrice).toFixed(2)} at
-                the live Flare FTSO XRP/USD price (${xrpUsdPrice.toFixed(4)})
-              </>
-            )}
-          </p>
-
-          <div className="mt-4 divide-y divide-zinc-100 border-t border-zinc-100 dark:divide-zinc-800 dark:border-zinc-800">
-            <DetailRow label="Seller">
-              <span className="font-mono" title={seller}>
-                {truncateAddress(seller)}
-              </span>
-            </DetailRow>
-            <DetailRow
-              label="Bid deposit"
-              note="uniform deposit - hides real bid size"
-            >
-              {bidDeposit !== undefined
-                ? `${formatAmount(bidDeposit, 18)} C2FLR`
-                : "—"}
-            </DetailRow>
-            <DetailRow label="Reserve price">
-              {hasPublicMinPrice === undefined ? (
-                "—"
-              ) : hasPublicMinPrice ? (
-                `${
-                  publicMinPrice !== undefined
-                    ? formatAmount(publicMinPrice, 18)
-                    : "—"
-                } C2FLR`
-              ) : (
-                <span className="text-zinc-500 dark:text-zinc-400">
-                  Hidden (only the confidential compute module knows)
+              {stateMeta && (
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-medium ${stateMeta.className}`}
+                >
+                  {stateMeta.label}
                 </span>
               )}
-            </DetailRow>
-            <DetailRow label="Bidders">
-              {bidderCount !== undefined
-                ? `${bidderCount.toString()} bidder${bidderCount === BigInt(1) ? "" : "s"}`
+            </div>
+
+            <p className="mt-4 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              {lotAmount !== undefined
+                ? `${formatAmount(lotAmount, FXRP_DECIMALS)} FXRP`
                 : "—"}
-            </DetailRow>
-          </div>
-
-          {auctionState === AUCTION_STATE.FUNDING && (
-            <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
-              The seller has not funded the FXRP lot yet - bidding has not
-              started.
             </p>
-          )}
+            <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+              Sealed-bid lot on Flare Coston2
+              {xrpUsdPrice !== undefined && lotAmount !== undefined && (
+                <>
+                  {" "}
+                  · ≈ ${(Number(formatUnits(lotAmount, FXRP_DECIMALS)) * xrpUsdPrice).toFixed(2)} at
+                  the live Flare FTSO XRP/USD price (${xrpUsdPrice.toFixed(4)})
+                </>
+              )}
+            </p>
 
-          {auctionState === AUCTION_STATE.OPEN &&
-            biddingDeadline !== undefined && (
-              <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-green-700 dark:border-zinc-800 dark:text-green-300">
-                <Countdown deadline={Number(biddingDeadline)} />
+            <div className="mt-4 divide-y divide-zinc-100 border-t border-zinc-100 dark:divide-zinc-800 dark:border-zinc-800">
+              <DetailRow label="Seller">
+                <span className="font-mono" title={seller}>
+                  {truncateAddress(seller)}
+                </span>
+              </DetailRow>
+              <DetailRow
+                label="Bid deposit"
+                note="uniform deposit - hides real bid size"
+              >
+                {bidDeposit !== undefined
+                  ? `${formatAmount(bidDeposit, 18)} C2FLR`
+                  : "—"}
+              </DetailRow>
+              <DetailRow label="Reserve price">
+                {hasPublicMinPrice === undefined ? (
+                  "—"
+                ) : hasPublicMinPrice ? (
+                  `${
+                    publicMinPrice !== undefined
+                      ? formatAmount(publicMinPrice, 18)
+                      : "—"
+                  } C2FLR`
+                ) : (
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    Hidden (only the confidential compute module knows)
+                  </span>
+                )}
+              </DetailRow>
+              <DetailRow label="Bidders">
+                {bidderCount !== undefined
+                  ? `${bidderCount.toString()} bidder${bidderCount === BigInt(1) ? "" : "s"}`
+                  : "—"}
+              </DetailRow>
+            </div>
+
+            {auctionState === AUCTION_STATE.FUNDING && (
+              <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                The seller has not funded the FXRP lot yet - bidding has not
+                started.
               </p>
             )}
 
-          {auctionState === AUCTION_STATE.SETTLED && (
-            <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-              <p className="text-sm text-zinc-900 dark:text-zinc-100">
-                <span className="text-zinc-500 dark:text-zinc-400">
-                  Winning price:{" "}
-                </span>
-                {finalPrice !== undefined
-                  ? `${formatAmount(finalPrice, 18)} C2FLR`
-                  : "—"}
-              </p>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                Only the winning price is public - all other bids remain
-                private forever.
-              </p>
-            </div>
-          )}
+            {auctionState === AUCTION_STATE.OPEN &&
+              biddingDeadline !== undefined && (
+                <p className="mt-4 border-t border-zinc-100 pt-4 text-sm dark:border-zinc-800">
+                  <Countdown deadline={Number(biddingDeadline)} live />
+                </p>
+              )}
 
-          {auctionState === AUCTION_STATE.NO_WINNER && (
-            <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
-              No valid bid was found.
-            </p>
-          )}
+            {auctionState === AUCTION_STATE.SETTLED && (
+              <div className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                <p className="text-sm text-zinc-900 dark:text-zinc-100">
+                  <span className="text-zinc-500 dark:text-zinc-400">
+                    Winning price:{" "}
+                  </span>
+                  {finalPrice !== undefined
+                    ? `${formatAmount(finalPrice, 18)} C2FLR`
+                    : "—"}
+                </p>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  Only the winning price is public - all other bids remain
+                  private forever.
+                </p>
+              </div>
+            )}
 
-          {auctionState === AUCTION_STATE.EXPIRED && (
-            <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
-              This auction expired without a settled result.
-            </p>
-          )}
+            {auctionState === AUCTION_STATE.NO_WINNER && (
+              <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                No valid bid was found.
+              </p>
+            )}
+
+            {auctionState === AUCTION_STATE.EXPIRED && (
+              <p className="mt-4 border-t border-zinc-100 pt-4 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400">
+                This auction expired without a settled result.
+              </p>
+            )}
+          </div>
         </div>
 
         {/* ---- Bidding area (Open state only) ---- */}
