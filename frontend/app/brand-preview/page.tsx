@@ -125,9 +125,9 @@ const DIRECTIONS: Record<string, Direction> = {
   hybrid: {
     id: "hybrid",
     name: "D - Ember + pulse",
-    tagline: "Ember's premium feel, plus one detail that reads in a static screenshot.",
+    tagline: "Ember's premium feel, plus what actually reads in a static screenshot.",
     rationale:
-      "Exactly direction B, with a single change: the pulsing live-dot next to the countdown (borrowed from C) is always visible on Open auctions, not just on hover. Everything else - zinc buttons/badges, the gradient wordmark, the card hairline, the hover glow - is untouched, so the product still reads as premium/understated at rest. But a hackathon judge looking at a static screenshot or a video with no mouse movement will still see one unmistakably branded, animated signal: an open auction is live right now. The hover glow remains a nice-to-notice detail for anyone who actually clicks around.",
+      "Direction B, with two changes for judging conditions that don't involve a mouse: the top-of-card hairline is thicker and brighter (was 1px/80% opacity - too subtle at rest to survive a screenshot or a static video frame; now 3px with a soft glow), and the pulsing live-dot next to the countdown (borrowed from C) is always visible on Open auctions, not only on hover. Buttons, badges, and the gradient wordmark are untouched, so the product still reads as premium/understated overall - only the one thing that should catch a judge's eye without any interaction now reliably does.",
     shades: [
       { hex: FLARE.pink, use: "glow + hairline + dot ping" },
       { hex: FLARE.bright, use: "countdown + dot core" },
@@ -143,8 +143,12 @@ const DIRECTIONS: Record<string, Direction> = {
       cardExtra: "",
       cardGlow:
         "pointer-events-none absolute -inset-1 rounded-3xl bg-[#E62058]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100",
+      // Thicker and brighter than the original Ember hairline (1px, 80%
+      // opacity) - that one didn't read reliably at rest, which defeats the
+      // point here: this needs to show up in a static screenshot/video with
+      // no mouse movement, not just in-browser on close inspection.
       cardHairline:
-        "pointer-events-none absolute inset-x-5 top-0 h-px bg-linear-to-r from-transparent via-[#E62058]/80 to-transparent",
+        "pointer-events-none absolute inset-x-5 top-0 h-[3px] rounded-full bg-linear-to-r from-transparent via-[#F73C68] to-transparent shadow-[0_0_12px_2px_rgba(230,32,88,0.6)]",
       countdown:
         "text-[#F73C68] drop-shadow-[0_0_14px_rgba(230,32,88,0.45)]",
       countdownDot: "",
