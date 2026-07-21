@@ -122,6 +122,35 @@ const DIRECTIONS: Record<string, Direction> = {
       input: zincInput,
     },
   },
+  hybrid: {
+    id: "hybrid",
+    name: "D - Ember + pulse",
+    tagline: "Ember's premium feel, plus one detail that reads in a static screenshot.",
+    rationale:
+      "Exactly direction B, with a single change: the pulsing live-dot next to the countdown (borrowed from C) is always visible on Open auctions, not just on hover. Everything else - zinc buttons/badges, the gradient wordmark, the card hairline, the hover glow - is untouched, so the product still reads as premium/understated at rest. But a hackathon judge looking at a static screenshot or a video with no mouse movement will still see one unmistakably branded, animated signal: an open auction is live right now. The hover glow remains a nice-to-notice detail for anyone who actually clicks around.",
+    shades: [
+      { hex: FLARE.pink, use: "glow + hairline + dot ping" },
+      { hex: FLARE.bright, use: "countdown + dot core" },
+      { hex: FLARE.soft, use: "gradient end" },
+    ],
+    styles: {
+      wordmark:
+        "bg-linear-to-r from-[#E62058] via-[#F73C68] to-[#FD6F8C] bg-clip-text text-base font-semibold tracking-tight text-transparent",
+      connectButton: zincConnect,
+      primaryButton: zincPrimary,
+      filterActive: zincFilterActive,
+      openBadge: defaultOpenBadge,
+      cardExtra: "",
+      cardGlow:
+        "pointer-events-none absolute -inset-1 rounded-3xl bg-[#E62058]/20 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100",
+      cardHairline:
+        "pointer-events-none absolute inset-x-5 top-0 h-px bg-linear-to-r from-transparent via-[#E62058]/80 to-transparent",
+      countdown:
+        "text-[#F73C68] drop-shadow-[0_0_14px_rgba(230,32,88,0.45)]",
+      countdownDot: "",
+      input: zincInput,
+    },
+  },
   livewire: {
     id: "livewire",
     name: "C - Live wire",
@@ -150,7 +179,7 @@ const DIRECTIONS: Record<string, Direction> = {
   },
 };
 
-const DIRECTION_ORDER = ["signal", "ember", "livewire"];
+const DIRECTION_ORDER = ["signal", "ember", "hybrid", "livewire"];
 
 // ---- Demo components: copies of real app markup, accent classes injected --
 
@@ -387,7 +416,7 @@ function DemoActions({ s }: { s: DirectionStyles }) {
 // ---- Page -----------------------------------------------------------------
 
 export default function BrandPreviewPage() {
-  const [activeId, setActiveId] = useState("signal");
+  const [activeId, setActiveId] = useState("hybrid");
   const direction = DIRECTIONS[activeId];
   const s = direction.styles;
 
