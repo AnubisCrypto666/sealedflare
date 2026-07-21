@@ -37,7 +37,7 @@ export function ConnectWallet() {
   });
 
   const buttonBase =
-    "inline-flex h-9 items-center justify-center rounded-full px-4 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+    "inline-flex h-9 items-center justify-center rounded-full px-3 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-60 sm:px-4";
 
   if (!mounted || status === "reconnecting") {
     return (
@@ -97,14 +97,14 @@ export function ConnectWallet() {
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2 sm:gap-3">
       {balance && (
         <span className="hidden text-sm tabular-nums text-zinc-600 dark:text-zinc-400 sm:inline">
           {Number(formatUnits(balance.value, balance.decimals)).toFixed(4)}{" "}
           {balance.symbol}
         </span>
       )}
-      <span className="rounded-full border border-zinc-300 px-3 py-1.5 font-mono text-sm text-zinc-900 dark:border-zinc-700 dark:text-zinc-100">
+      <span className="rounded-full border border-zinc-300 px-2.5 py-1 font-mono text-xs text-zinc-900 dark:border-zinc-700 dark:text-zinc-100 sm:px-3 sm:py-1.5 sm:text-sm">
         {address ? truncateAddress(address) : ""}
       </span>
       <button

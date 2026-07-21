@@ -149,7 +149,7 @@ const inputClass =
   "w-full rounded-xl border border-zinc-300 bg-white px-4 py-2.5 text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-colors focus:border-zinc-500 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder-zinc-500 dark:focus:border-zinc-500";
 
 const primaryButtonClass =
-  "inline-flex h-10 items-center justify-center self-start rounded-full bg-zinc-900 px-6 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300";
+  "inline-flex min-h-10 items-center justify-center self-start rounded-full bg-zinc-900 px-6 py-2 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300";
 
 type StepStatus = "pending" | "active" | "done" | "failed";
 
@@ -215,7 +215,7 @@ function DetailRow({
       <span className="shrink-0 text-sm text-zinc-500 dark:text-zinc-400">
         {label}
       </span>
-      <span className="text-right">
+      <span className="text-right wrap-anywhere">
         <span className="text-sm text-zinc-900 dark:text-zinc-100">
           {children}
         </span>
@@ -312,6 +312,8 @@ export default function AuctionDetailPage() {
   const {
     data: fieldResults,
     isLoading: isLoadingFields,
+    isError: isFieldsError,
+    error: fieldsError,
     refetch: refetchFields,
   } = useReadContracts({
     contracts: AUCTION_FIELDS.map((functionName) => ({
@@ -545,6 +547,30 @@ export default function AuctionDetailPage() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
         <div className="mx-auto max-w-2xl">
           <div className="h-72 animate-pulse rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900" />
+        </div>
+      </main>
+    );
+  }
+
+  // The read itself failed (e.g. RPC unreachable) - without this branch the
+  // page would misreport a network error as "Auction not found" below.
+  if (isFieldsError) {
+    return (
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
+        <div className="mx-auto flex max-w-2xl flex-col items-center gap-4 rounded-2xl border border-red-300 bg-red-50 px-6 py-16 text-center dark:border-red-900/60 dark:bg-red-950/40">
+          <p className="text-lg font-medium text-red-700 dark:text-red-300">
+            Could not load this auction
+          </p>
+          <p className="max-w-md text-sm break-words text-red-600 dark:text-red-400">
+            {errorMessage(fieldsError)} Check your connection and try again.
+          </p>
+          <button
+            type="button"
+            onClick={() => void refetchFields()}
+            className="inline-flex h-9 items-center justify-center rounded-full bg-zinc-900 px-4 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          >
+            Try again
+          </button>
         </div>
       </main>
     );

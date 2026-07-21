@@ -173,7 +173,7 @@ function SegmentedControl<T extends string>({
     <div
       role="radiogroup"
       aria-label={ariaLabel}
-      className="inline-flex flex-wrap gap-1 self-start rounded-full border border-zinc-300 p-1 dark:border-zinc-700"
+      className="inline-flex flex-wrap gap-1 self-start rounded-2xl border border-zinc-300 p-1 dark:border-zinc-700"
     >
       {options.map((option) => (
         <button
@@ -281,7 +281,7 @@ export default function CreateAuctionPage() {
   const [approveNeeded, setApproveNeeded] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const { data: fxrpBalance } = useReadContract({
+  const { data: fxrpBalance, isError: isBalanceError } = useReadContract({
     address: FXRP_TOKEN_ADDRESS,
     abi: erc20Abi,
     functionName: "balanceOf",
@@ -551,10 +551,14 @@ export default function CreateAuctionPage() {
     xrpUsdPrice !== undefined && lotAmountWei !== null && lotAmountWei > BigInt(0)
       ? ` This lot ≈ $${(Number(formatUnits(lotAmountWei, FXRP_DECIMALS)) * xrpUsdPrice).toFixed(2)}.`
       : "";
+  // A failed balance read must not block submission (the balance is only
+  // display/warning input) and must not show a stale number - say so plainly.
   const balanceHint =
     (address && fxrpBalance !== undefined
       ? `Your balance: ${formatFxrp(fxrpBalance)} FXRP. FXRP has 6 decimals, like XRP.`
-      : "FXRP has 6 decimals, like XRP.") +
+      : address && isBalanceError
+        ? "Could not load your FXRP balance - this does not block creating the auction. FXRP has 6 decimals, like XRP."
+        : "FXRP has 6 decimals, like XRP.") +
     xrpUsdHint +
     lotValueHint;
 

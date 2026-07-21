@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { formatUnits, type Abi, type Address } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 import { Countdown } from "@/components/Countdown";
@@ -27,7 +28,13 @@ const AUCTION_FIELDS = [
   "bidderCount",
 ] as const;
 
-const AUCTION_STATE = { FUNDING: 0, OPEN: 1, SETTLED: 2 } as const;
+const AUCTION_STATE = {
+  FUNDING: 0,
+  OPEN: 1,
+  SETTLED: 2,
+  NO_WINNER: 3,
+  EXPIRED: 4,
+} as const;
 
 const STATE_META = [
   {
@@ -65,6 +72,49 @@ function formatAmount(value: bigint, decimals: number) {
   if (!frac) return grouped;
   const trimmed = frac.replace(/0+$/, "");
   return trimmed ? `${grouped}.${trimmed}` : grouped;
+}
+
+function errorMessage(error: unknown): string {
+  if (
+    error &&
+    typeof error === "object" &&
+    "shortMessage" in error &&
+    typeof (error as { shortMessage?: unknown }).shortMessage === "string"
+  ) {
+    return (error as { shortMessage: string }).shortMessage;
+  }
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
+type FilterTab = "open" | "settled" | "ended" | "all";
+
+const FILTER_TABS: readonly { value: FilterTab; label: string }[] = [
+  { value: "open", label: "Open" },
+  { value: "settled", label: "Settled" },
+  { value: "ended", label: "Ended" },
+  { value: "all", label: "All" },
+];
+
+// Funding counts as live alongside Open: the auction exists, it is just
+// waiting for the seller to fund the FXRP lot before bidding starts.
+function matchesFilter(auction: Auction, filter: FilterTab): boolean {
+  switch (filter) {
+    case "open":
+      return (
+        auction.state === AUCTION_STATE.FUNDING ||
+        auction.state === AUCTION_STATE.OPEN
+      );
+    case "settled":
+      return auction.state === AUCTION_STATE.SETTLED;
+    case "ended":
+      return (
+        auction.state === AUCTION_STATE.NO_WINNER ||
+        auction.state === AUCTION_STATE.EXPIRED
+      );
+    case "all":
+      return true;
+  }
 }
 
 type Auction = {
@@ -196,18 +246,55 @@ function EmptyState() {
   );
 }
 
+function ErrorState({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-4 rounded-2xl border border-red-300 bg-red-50 px-6 py-16 text-center dark:border-red-900/60 dark:bg-red-950/40">
+      <p className="text-lg font-medium text-red-700 dark:text-red-300">
+        Could not load auctions
+      </p>
+      <p className="max-w-md text-sm break-words text-red-600 dark:text-red-400">
+        {message}
+      </p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="inline-flex h-9 items-center justify-center rounded-full bg-zinc-900 px-4 text-sm font-medium text-zinc-50 transition-colors hover:bg-zinc-700 dark:bg-zinc-50 dark:text-zinc-900 dark:hover:bg-zinc-300"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}
+
 export default function AuctionsPage() {
-  const { data: auctionAddresses, isLoading: isLoadingAddresses } =
-    useReadContract({
-      address: AUCTION_FACTORY_ADDRESS,
-      abi: factoryAbi,
-      functionName: "getAllAuctions",
-      chainId: coston2.id,
-    });
+  const {
+    data: auctionAddresses,
+    isLoading: isLoadingAddresses,
+    isError: isAddressesError,
+    error: addressesError,
+    refetch: refetchAddresses,
+  } = useReadContract({
+    address: AUCTION_FACTORY_ADDRESS,
+    abi: factoryAbi,
+    functionName: "getAllAuctions",
+    chainId: coston2.id,
+  });
 
   const addresses = (auctionAddresses as Address[] | undefined) ?? [];
 
-  const { data: fieldResults, isLoading: isLoadingFields } = useReadContracts({
+  const {
+    data: fieldResults,
+    isLoading: isLoadingFields,
+    isError: isFieldsError,
+    error: fieldsError,
+    refetch: refetchFields,
+  } = useReadContracts({
     contracts: addresses.flatMap((address) =>
       AUCTION_FIELDS.map((functionName) => ({
         address,
@@ -236,6 +323,27 @@ export default function AuctionsPage() {
     };
   });
 
+  const [filter, setFilter] = useState<FilterTab>("open");
+
+  const counts: Record<FilterTab, number> = {
+    open: 0,
+    settled: 0,
+    ended: 0,
+    all: auctions.length,
+  };
+  for (const auction of auctions) {
+    if (matchesFilter(auction, "open")) counts.open += 1;
+    if (matchesFilter(auction, "settled")) counts.settled += 1;
+    if (matchesFilter(auction, "ended")) counts.ended += 1;
+  }
+
+  const filteredAuctions =
+    filter === "all"
+      ? auctions
+      : auctions.filter((auction) => matchesFilter(auction, filter));
+
+  const loadError = isAddressesError ? addressesError : fieldsError;
+
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
       <div className="mb-8 flex items-end justify-between gap-4">
@@ -257,14 +365,61 @@ export default function AuctionsPage() {
 
       {isLoading ? (
         <LoadingGrid />
+      ) : isAddressesError || isFieldsError ? (
+        <ErrorState
+          message={`${errorMessage(loadError)} Check your connection and try again.`}
+          onRetry={() => {
+            if (isAddressesError) void refetchAddresses();
+            if (isFieldsError) void refetchFields();
+          }}
+        />
       ) : auctions.length === 0 ? (
         <EmptyState />
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {auctions.map((auction) => (
-            <AuctionCard key={auction.address} auction={auction} />
-          ))}
-        </div>
+        <>
+          <div
+            role="group"
+            aria-label="Filter auctions"
+            className="mb-4 inline-flex flex-wrap gap-1 rounded-full border border-zinc-300 p-1 dark:border-zinc-700"
+          >
+            {FILTER_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                aria-pressed={filter === tab.value}
+                onClick={() => setFilter(tab.value)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                  filter === tab.value
+                    ? "bg-zinc-900 text-zinc-50 dark:bg-zinc-50 dark:text-zinc-900"
+                    : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
+                }`}
+              >
+                {tab.label}
+                <span
+                  className={`ml-1.5 text-xs tabular-nums ${
+                    filter === tab.value
+                      ? "text-zinc-300 dark:text-zinc-600"
+                      : "text-zinc-400 dark:text-zinc-500"
+                  }`}
+                >
+                  {counts[tab.value]}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {filteredAuctions.length === 0 ? (
+            <p className="rounded-2xl border border-dashed border-zinc-300 px-6 py-16 text-center text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
+              No auctions in this category.
+            </p>
+          ) : (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredAuctions.map((auction) => (
+                <AuctionCard key={auction.address} auction={auction} />
+              ))}
+            </div>
+          )}
+        </>
       )}
     </main>
   );

@@ -22,7 +22,7 @@ export function SiteHeader() {
           </Link>
           <Link
             href="/create"
-            className="text-sm text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+            className="hidden text-sm text-zinc-600 transition-colors hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 sm:inline"
           >
             Create Auction
           </Link>
