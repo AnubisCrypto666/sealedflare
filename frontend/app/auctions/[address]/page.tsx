@@ -672,6 +672,13 @@ export default function AuctionDetailPage() {
           </p>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             Sealed-bid lot on Flare Coston2
+            {xrpUsdPrice !== undefined && lotAmount !== undefined && (
+              <>
+                {" "}
+                · ≈ ${(Number(formatUnits(lotAmount, FXRP_DECIMALS)) * xrpUsdPrice).toFixed(2)} at
+                the live Flare FTSO XRP/USD price (${xrpUsdPrice.toFixed(4)})
+              </>
+            )}
           </p>
 
           <div className="mt-4 divide-y divide-zinc-100 border-t border-zinc-100 dark:divide-zinc-800 dark:border-zinc-800">
