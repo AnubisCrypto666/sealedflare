@@ -69,8 +69,10 @@ runs of both the settled-with-a-winner path and the no-winner/expiry path.
 ## Links
 
 - Repo: https://github.com/AnubisCrypto666/sealedflare
-- Live demo: _TODO - not deployed yet (e.g. Vercel); judges can run the
-  frontend locally per the repo README in the meantime_
+- Live demo: https://sealedflare-anubis-crypto.vercel.app (browse/create
+  auctions and submit sealed bids against the live Coston2 contracts;
+  settling an auction needs the FCE module, which only runs locally per the
+  repo README - see "Running it yourself")
 - Demo video: _TODO - see `DEMO_SCRIPT.md`_
 
 ## Roadmap

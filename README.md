@@ -81,9 +81,15 @@ Deployed on Coston2:
 
 ## Running it yourself
 
-Two ways to try it, depending on how deep you want to go.
+**Hosted demo:** https://sealedflare-anubis-crypto.vercel.app - works
+against the live Coston2 contracts, no local setup needed. You can browse
+auctions, create one, and submit a sealed bid directly from there; only
+*settling* an auction needs the FCE module running locally (see below), so
+that step isn't available from the hosted link alone.
 
-**Quick look — browse the live deployment.** The frontend works against the
+Two ways to go deeper, depending on how much you want to touch:
+
+**Quick look — run the frontend locally.** Works against the
 already-deployed `AuctionFactory` above out of the box:
 
 ```bash
